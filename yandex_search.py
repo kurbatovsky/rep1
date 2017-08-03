@@ -1,17 +1,21 @@
 """ Download links from Yandex """
 import sys
+import re
 import requests
 import lxml.html
 
 
-HTTPS = "https://yandex.ru/search/"
+def get_page(params):
+    """ Get page from request"""
+    url = "https://yandex.ru/search/"
+    page = requests.get(url, "text=" + "%20".join(params) + "&lr=47")
+    return page
 
 
 def get_html(params):
     """ Get HTML from web"""
-    request = requests.get(HTTPS, "text=" + "%20".join(params) + "&lr=47")
-    print(request.url)
-    return request.text
+    page = get_page(params)
+    return page.text
 
 
 def parse_html(html, xpath):
@@ -26,6 +30,6 @@ if __name__ == "__main__":
         xPath = "/html/body/div[2]/div[2]/div[3]/div[1]/div[1]/ul/li[{}]/div/h2/a/@href".format(i)
         link = parse_html(HTML, xPath)
         if link is []:
-            xPath = "/html/body/div[2]/div[2]/div[3]/div[1]/div[1]/ul/li[{}]/h2/a/@href".format(i)
+            xPath = re.sub(r"div/", '', xPath)
             link = parse_html(HTML, xPath)
         print(link)
