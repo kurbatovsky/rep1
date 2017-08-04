@@ -4,6 +4,13 @@ import requests
 import lxml.html
 
 
+def clear_link(link):
+    """ Clear link"""
+    link = re.sub(r'/url\?q=', '', link)
+    link = re.sub(r'&sa=.+', '', link)
+    return link
+
+
 def clear_request(params):
     """ Create request """
     for param in params:
@@ -40,8 +47,7 @@ if __name__ == "__main__":
             if bool(re.match(r'^/search', link)):
                 continue
             else:
-                link = re.sub(r'/url\?q=', '', link)
-                link = re.sub(r'&sa=.+', '', link)
+                link = clear_link(link)
                 linksQuantity += 1
                 print(link)
             if linksQuantity == 3:
