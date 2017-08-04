@@ -51,16 +51,7 @@ def main():
         html_ = get_html(args)
         links = parse_html(html_)
         if links:
-            links_quantity = 0
-            index = 0
-            while links_quantity != 3:
-                if is_valid(links[index]):
-                    print(is_valid(links[index]))
-                    links_quantity += 1
-                else:
-                    index += 1
-                    continue
-                index += 1
+            print('\n'.join([is_valid(link) for link in links if is_valid(link)][:3]))
         else:
             print("No results")
     else:
