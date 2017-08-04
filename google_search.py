@@ -31,17 +31,20 @@ def parse_html(html, xpath):
 
 
 if __name__ == "__main__":
-    HTML = get_html(sys.argv[1:])
-    xPath = "/html/body//div[2]//div/h3/a/@href"
-    links = parse_html(HTML, xPath)
-    linksQuantity = 0
-    for link in links:
-        if bool(re.match(r'^/search', link)):
-            continue
-        else:
-            link = re.sub(r'/url\?q=', '', link)
-            link = re.sub(r'&sa=.+', '', link)
-            linksQuantity += 1
-            print(link)
-        if linksQuantity == 3:
-            break
+    if len(sys.argv) > 1:
+        HTML = get_html(sys.argv[1:])
+        xPath = "/html/body//div[2]//div/h3/a/@href"
+        links = parse_html(HTML, xPath)
+        linksQuantity = 0
+        for link in links:
+            if bool(re.match(r'^/search', link)):
+                continue
+            else:
+                link = re.sub(r'/url\?q=', '', link)
+                link = re.sub(r'&sa=.+', '', link)
+                linksQuantity += 1
+                print(link)
+            if linksQuantity == 3:
+                break
+    else:
+        print("Use format: 'python google_search.py *params'")
