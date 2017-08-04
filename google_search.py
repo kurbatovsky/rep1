@@ -54,7 +54,7 @@ def main():
             links_quantity = 0
             index = 0
             while links_quantity != 3:
-                if is_valid(links[index]) is not None:
+                if is_valid(links[index]):
                     print(is_valid(links[index]))
                     links_quantity += 1
                 else:
