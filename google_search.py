@@ -43,14 +43,11 @@ if __name__ == "__main__":
         xPath = "/html/body//div[2]//div/h3/a/@href"
         links = parse_html(HTML, xPath)
         linksQuantity = 0
-        for link in links:
-            if bool(re.match(r'^/search', link)):
+        while linksQuantity != 3:
+            if bool(re.match(r'/search', links[linksQuantity])):
                 continue
             else:
-                link = clear_link(link)
+                print(clear_link(links[linksQuantity]))
                 linksQuantity += 1
-                print(link)
-            if linksQuantity == 3:
-                break
     else:
         print("Use format: 'python google_search.py *params'")
