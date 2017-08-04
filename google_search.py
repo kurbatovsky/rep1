@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 """ Download links from Google """
 import sys
 import re
 import requests
-import lxml.html
+from lxml import html
 
 
 def clear_link(link):
@@ -14,9 +15,7 @@ def clear_link(link):
 
 def clear_request(params):
     """ Create request """
-    for param in params:
-        param = re.sub(r'\W', '', param)
-    return params
+    return [re.sub(r'\W', '', param) for param in params]
 
 
 def get_page(params):
@@ -32,23 +31,40 @@ def get_html(params):
     return page.text
 
 
-def parse_html(html, xpath):
+def parse_html(html_):
     """ Parse HTML """
-    tree = lxml.html.fromstring(html)
-    return tree.xpath(xpath)
+    tree = html.fromstring(html_)
+    return tree.xpath("/html/body//div[2]//div/h3/a/@href")
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        HTML = get_html(sys.argv[1:])
-        xPath = "/html/body//div[2]//div/h3/a/@href"
-        links = parse_html(HTML, xPath)
-        linksQuantity = 0
-        while linksQuantity != 3:
-            if bool(re.match(r'/search', links[linksQuantity])):
-                continue
-            else:
-                print(clear_link(links[linksQuantity]))
-                linksQuantity += 1
+def is_valid(link):
+    """ Link validation """
+    if not re.match(r'/search', link):
+        return clear_link(link)
+    return None
+
+
+def main():
+    """ Main function """
+    args = sys.argv[1:]
+    if args:
+        html_ = get_html(args)
+        links = parse_html(html_)
+        if links:
+            links_quantity = 0
+            index = 0
+            while links_quantity != 3:
+                if is_valid(links[index]) is not None:
+                    print(is_valid(links[index]))
+                    links_quantity += 1
+                else:
+                    index += 1
+                    continue
+                index += 1
+        else:
+            print("No results")
     else:
         print("Use format: 'python google_search.py *params'")
+
+if __name__ == "__main__":
+    main()
