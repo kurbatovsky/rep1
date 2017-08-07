@@ -6,20 +6,20 @@ OS = {}
 
 
 def read_log(log_file):
-    """ Read log from file"""
+    """ Read log from file """
     with open(log_file, 'r') as file_:
         logs = file_.read()
     return logs
 
 
 def search_ip(logs):
-    """ Looking for IP in log"""
+    """ Looking for IP in log """
     ips = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', logs)
     return list(set(ips))
 
 
 def count_ip(ip, logs):
-    """ Count IP"""
+    """ Count IP """
     return len(re.findall(ip, logs))
 
 
@@ -30,19 +30,15 @@ def sort_ip(ips, logs):
 
 
 def search_all_os(logs):
-    """ Search all OS"""
+    """ Search all OS """
     logs_list = logs.splitlines()
-    for x in logs_list:
-        search_os(clear_log(x))
+    for log in logs_list:
+        search_os(clear_log(log))
 
 
 def add_key(key):
-    """ Add key to dict"""
-    if key not in OS:
-        OS[key] = 0
-        OS[key] += 1
-    else:
-        OS[key] += 1
+    """ Add key to dict """
+    OS[key] = OS[key] + 1 if key in OS else 1
 
 
 def search_os(log):
@@ -77,15 +73,13 @@ def search_os(log):
         add_key(re.search(r'\wcoc', log).group())
 
 
-def sort_OS():
-    """ Sort OS"""
-    sorted_OS = sorted(OS, lambda x, y: cmp(OS[x], OS[y]))
-    sorted_OS.reverse()
-    return sorted_OS
+def sort_os():
+    """ Sort OS """
+    return sorted(OS, cmp=lambda x, y: cmp(OS[x], OS[y]), reverse=True)
 
 
 def clear_log(log):
-    """ Clear log"""
+    """ Clear log """
     log = re.sub(r'HTTP/', '', log)
     log = re.sub(r'Mozilla/', '', log)
     return log
@@ -99,7 +93,7 @@ def main():
     print('\n'.join(sort_ip(search_ip(logs), logs)[:10]))
     search_all_os(logs)
     print("\nFrequent systems:")
-    print('\n'.join(sort_OS()[:5]))
+    print('\n'.join(sort_os()[:5]))
 
 
 if __name__ == '__main__':
