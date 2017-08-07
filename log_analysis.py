@@ -30,7 +30,7 @@ def main():
     """ Main function"""
     log_file = r'C:\Users\ikurbatovskiy\Desktop\access2.log'
     logs = read_log(log_file)
-    print(sort_ip(search_ip(logs), logs)[:10])
+    print('\n'.join(sort_ip(search_ip(logs), logs)[:10]))
 
 
 if __name__ == '__main__':
