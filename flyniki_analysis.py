@@ -8,18 +8,7 @@ import requests
 from lxml import html
 
 
-DATA = {'_ajax[templates][]': 'main',
-        '_ajax[requestParams][departure]': sys.argv[1],
-        '_ajax[requestParams][destination]': sys.argv[2],
-        '_ajax[requestParams][outboundDate]': sys.argv[3],
-        '_ajax[requestParams][returnDate]': sys.argv[4] if len(sys.argv) == 5 else '',
-        '_ajax[requestParams][adultCount]': '1',
-        '_ajax[requestParams][childCount]': '0',
-        '_ajax[requestParams][infantCount]': '0',
-        '_ajax[requestParams][returnDeparture]': '',
-        '_ajax[requestParams][returnDestination]': '',
-        '_ajax[requestParams][openDateOverview]': '',
-        '_ajax[requestParams][oneway]': '' if len(sys.argv) == 5 else 1}
+DATA = {}
 
 
 class Flight:
@@ -52,6 +41,23 @@ def construct_url():
     return url.format(args[0], args[1], args[2]) + url_add.format(args[3]) + url_oneway.format(0)\
         if len(args) == 4 else url.format(args[0], args[1], args[2]) + url_oneway.format(1)
 
+
+def create_data():
+    """ Create DATA"""
+    global DATA
+    if len(sys.argv) >= 4:
+        DATA = {'_ajax[templates][]': 'main',
+                '_ajax[requestParams][departure]': sys.argv[1],
+                '_ajax[requestParams][destination]': sys.argv[2],
+                '_ajax[requestParams][outboundDate]': sys.argv[3],
+                '_ajax[requestParams][returnDate]': sys.argv[4] if len(sys.argv) == 5 else '',
+                '_ajax[requestParams][adultCount]': '1',
+                '_ajax[requestParams][childCount]': '0',
+                '_ajax[requestParams][infantCount]': '0',
+                '_ajax[requestParams][returnDeparture]': '',
+                '_ajax[requestParams][returnDestination]': '',
+                '_ajax[requestParams][openDateOverview]': '',
+                '_ajax[requestParams][oneway]': '' if len(sys.argv) == 5 else 1}
 
 def get_page():
     """ Get page """
@@ -155,6 +161,7 @@ def sort_by_time(flight):
 
 def main():
     """ Main function """
+    create_data()
     args = sys.argv[1:]
     if len(args) >= 3:
         html_ = get_html(get_page())
