@@ -85,34 +85,38 @@ def get_info(html_, class_, back=False):
 
 
 def set_direction(back):
+    """ Check derection """
     return 3 if back else 1
 
 
 def get_time(html_, back=False, destination=False):
     """ Get time from HTML"""
     times = []
+    xpath = '//*[@id="flighttables"]/div[{0}]/div[2]//table[1]/tbody[1]/tr[{1}]/td[2]/span/time[{2}]'
     for i in range(1, 7):
-        times.append(parse_html(html_,
-            '//*[@id="flighttables"]/div[{0}]/div[2]//table[1]/tbody[1]/tr[{1}]/td[2]/span/time[{2}]'.format(
-                set_direction(back), 2*i - 1, 2 if destination else 1)))
+        times.append(parse_html(html_, xpath.format(set_direction(back),
+                                                    2*i - 1,
+                                                    2 if destination else 1)))
     return times
 
 
 def get_durations(html_, back=False):
     """ Get duration from HTML """
     durations = []
+    xpath = '//*[@id="flighttables"]/div[{0}]/div[2]/table[1]/tbody[1]/tr[{1}]/td[4]/span'
     for i in range(1, 7):
-        durations.append(parse_html(html_,
-            '//*[@id="flighttables"]/div[{0}]/div[2]/table[1]/tbody[1]/tr[{1}]/td[4]/span'.format(
-                set_direction(back), 2*i - 1)))
+        durations.append(parse_html(html_, xpath.format(set_direction(back), 2*i - 1)))
     return durations
 
 
 def set_class(class_):
-    return 5 if class_ == "ECO_SAVER" else 6 if class_ == "ECO_FLEX" else 7 if class_ == "BUS_SAVER" else 8
+    """ Check class """
+    return 5 if class_ == "ECO_SAVER" else 6 \
+        if class_ == "ECO_FLEX" else 7 if class_ == "BUS_SAVER" else 8
 
 
 def is_current(current):
+    """ Check price """
     return 2 if current else 1
 
 
@@ -131,7 +135,8 @@ def get_prices(html_, class_, back=False, current=False):
 def info_flight(info):
     """ Print flights information"""
     for i in range(len(info['departure'])):
-        if info['departure'][i] != [] and info['destination'][i] != [] and info['duration'][i] != [] and info['minimal'][i] != [] and info['current'][i] != []:
+        if info['departure'][i] != [] and info['destination'][i] != [] and info['duration'][i] != []\
+                and info['minimal'][i] != [] and info['current'][i] != []:
             fly = Flight(info['departure'][i][0],
                          info['destination'][i][0],
                          info['duration'][i][0],
@@ -150,16 +155,22 @@ def sort_by_time(flight):
 
 def main():
     """ Main function """
-    html_ = get_html(get_page())
-    info_flight(get_info(html_, class_="ECO_SAVER"))
-    info_flight(get_info(html_, class_="ECO_FLEX"))
-    info_flight(get_info(html_, class_="BUS_SAVER"))
-    info_flight(get_info(html_, class_="BUS_FLEX"))
-    if len(sys.argv) == 5:
-        info_flight(get_info(html_, class_="ECO_SAVER", back=True))
-        info_flight(get_info(html_, class_="ECO_FLEX", back=True))
-        info_flight(get_info(html_, class_="BUS_SAVER", back=True))
-        info_flight(get_info(html_, class_="BUS_FLEX", back=True))
+    args = sys.argv[1:]
+    if len(args) >= 3:
+        html_ = get_html(get_page())
+        print("To {}".format(args[1]))
+        info_flight(get_info(html_, class_="ECO_SAVER"))
+        info_flight(get_info(html_, class_="ECO_FLEX"))
+        info_flight(get_info(html_, class_="BUS_SAVER"))
+        info_flight(get_info(html_, class_="BUS_FLEX"))
+        if len(args) == 4:
+            print("To {}".format(args[0]))
+            info_flight(get_info(html_, class_="ECO_SAVER", back=True))
+            info_flight(get_info(html_, class_="ECO_FLEX", back=True))
+            info_flight(get_info(html_, class_="BUS_SAVER", back=True))
+            info_flight(get_info(html_, class_="BUS_FLEX", back=True))
+    else:
+        print("Use format: flyniki_analysis.py IATA IATA YYYY-MM-DD [YYYY-MM-DD]")
 
 
 if __name__ == "__main__":
