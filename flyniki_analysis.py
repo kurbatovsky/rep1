@@ -6,6 +6,7 @@ import sys
 import re
 import argparse
 import requests
+from datetime import date
 from lxml import html
 
 
@@ -52,16 +53,16 @@ class Parser:
 
     def clean_args(self):
         """ Clean args """
-        assert len(self.args.outbound) == 3, "IATA must be in AAA format"
-        assert len(self.args.return_) == 3, "IATA must be is AAA format"
+        assert re.match(r'^[A-Z][A-Z][A-Z]$', self.args.outbound).group() == self.args.outbound, "IATA must be in AAA format"
+        assert re.match(r'^[A-Z][A-Z][A-Z]$', self.args.return_).group() == self.args.return_, "IATA must be is AAA format"
         assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
         if self.args.return_date != '':
             assert self.is_correct_args(self.args.return_date), "Incorrect return date"
 
     @staticmethod
-    def is_correct_args(date):
+    def is_correct_args(date_):
         """ Check date """
-        return 20170814 < int(re.sub(r'-', '', date)) < 20180809
+        return int(re.sub(r'-', '', str(date.today()))) < int(re.sub(r'-', '', date_)) < int(re.sub(r'-', '', str(date.today()))) + 10000
 
     def construct_url(self):
         """ Construct url """
@@ -108,6 +109,7 @@ class Parser:
                                 self.lines[way][last - 2] == '' and\
                                 self.lines[way][last - 3] == '':
                     break
+
 
 
 if __name__ == "__main__":
