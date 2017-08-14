@@ -4,9 +4,9 @@ Find flight
 """
 import sys
 import re
+import argparse
 import requests
 from lxml import html
-# arg parse
 
 
 class Parser:
@@ -19,25 +19,34 @@ class Parser:
 
     def __init__(self):
         """ Initialization """
-        if len(sys.argv) >= 4:
-            self.data = {'_ajax[templates][]': 'main',
-                         '_ajax[requestParams][departure]': sys.argv[1],
-                         '_ajax[requestParams][destination]': sys.argv[2],
-                         '_ajax[requestParams][outboundDate]': sys.argv[3],
-                         '_ajax[requestParams][returnDate]': sys.argv[4] if len(sys.argv) == 5 else '',
-                         '_ajax[requestParams][adultCount]': '1',
-                         '_ajax[requestParams][childCount]': '0',
-                         '_ajax[requestParams][infantCount]': '0',
-                         '_ajax[requestParams][returnDeparture]': '',
-                         '_ajax[requestParams][returnDestination]': '',
-                         '_ajax[requestParams][openDateOverview]': '',
-                         '_ajax[requestParams][oneway]': '' if len(sys.argv) == 5 else 1}
+        self.args = self.parse_args()
+        self.data = {'_ajax[templates][]': 'main',
+                     '_ajax[requestParams][departure]': self.args.outbound,
+                     '_ajax[requestParams][destination]': self.args.return_,
+                     '_ajax[requestParams][outboundDate]': self.args.departure_date,
+                     '_ajax[requestParams][returnDate]': self.args.return_date,
+                     '_ajax[requestParams][adultCount]': '1',
+                     '_ajax[requestParams][childCount]': '0',
+                     '_ajax[requestParams][infantCount]': '0',
+                     '_ajax[requestParams][returnDeparture]': '',
+                     '_ajax[requestParams][returnDestination]': '',
+                     '_ajax[requestParams][openDateOverview]': '',
+                     '_ajax[requestParams][oneway]': '' if self.args.return_date != '' else 1}
         self.lines = {'outbound': [], 'return': []}
         self.construct_url()
         self.get_page()
         self.get_html()
         self.get_line()
         self.get_line(way='return')
+
+    @staticmethod
+    def parse_args():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('outbound', help="start IATA")
+        parser.add_argument('return_', help="finish IATA")
+        parser.add_argument('departure_date', help="Departure date")
+        parser.add_argument('return_date', nargs='?', help="Return date", default='')
+        return parser.parse_args()
 
     def construct_url(self):
         """ Construct url """
@@ -83,10 +92,10 @@ class Parser:
                                 self.lines[way][last - 3] == '':
                     break
 
-
+# BER JFK 2017-08-15 2017-08-19
 if __name__ == "__main__":
-    print("Outbound:")
-    print('\n'.join([x for x in Parser().lines['outbound'] if x != '']))
-    print("Return:")
-    print('\n'.join([x for x in Parser().lines['return'] if x != '']))
+    flights = Parser()
+    print("Outbound:\n" + '\n'.join([x for x in flights.lines['outbound'] if x != '']))
+    if flights.args.return_date != '':
+        print("Return:\n" + '\n'.join([x for x in flights.lines['return'] if x != '']))
 
