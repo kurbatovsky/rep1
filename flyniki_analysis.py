@@ -85,5 +85,8 @@ class Parser:
 
 
 if __name__ == "__main__":
+    print("Outbound:")
     print('\n'.join([x for x in Parser().lines['outbound'] if x != '']))
+    print("Return:")
     print('\n'.join([x for x in Parser().lines['return'] if x != '']))
+
