@@ -20,6 +20,7 @@ class Parser:
     def __init__(self):
         """ Initialization """
         self.args = self.parse_args()
+        self.clean_args()
         self.data = {'_ajax[templates][]': 'main',
                      '_ajax[requestParams][departure]': self.args.outbound,
                      '_ajax[requestParams][destination]': self.args.return_,
@@ -48,6 +49,17 @@ class Parser:
         parser.add_argument('return_date', nargs='?', help="Return date", default='')
         return parser.parse_args()
 
+    def clean_args(self):
+        assert len(self.args.outbound) == 3, "IATA must be in AAA format"
+        assert len(self.args.return_) == 3, "IATA must be is AAA format"
+        assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
+        if self.args.return_date != '':
+            assert self.is_correct_args(self.args.return_date), "Incorrect return date"
+
+    @staticmethod
+    def is_correct_args(date):
+        return 20170814 < int(re.sub(r'-', '', date)) < 20180809
+
     def construct_url(self):
         """ Construct url """
         url = 'https://www.flyniki.com/ru/booking/flight/vacancy.php?departure={0}&destination' \
@@ -55,9 +67,11 @@ class Parser:
         url_add = '&returnDate={0}'
         url_oneway = '&oneway={0}&openDateOverview=0' \
                      '&adultCount=1'
-        args = sys.argv[1:]
-        self.url = url.format(args[0], args[1], args[2]) + url_add.format(args[3]) + url_oneway.format(0) \
-            if len(args) == 4 else url.format(args[0], args[1], args[2]) + url_oneway.format(1)
+        self.url = url.format(self.args.outbound, self.args.return_, self.args.departure_date) +\
+                   url_add.format(self.args.return_date) + url_oneway.format(0) \
+            if self.args.return_date != '' else url.format(self.args.outbound,
+                                                           self.args.return_,
+                                                           self.args.departure_date) + url_oneway.format(1)
 
     def get_page(self):
         """ Get page """
