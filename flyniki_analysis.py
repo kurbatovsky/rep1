@@ -42,6 +42,7 @@ class Parser:
 
     @staticmethod
     def parse_args():
+        """ Parse args """
         parser = argparse.ArgumentParser()
         parser.add_argument('outbound', help="start IATA")
         parser.add_argument('return_', help="finish IATA")
@@ -50,6 +51,7 @@ class Parser:
         return parser.parse_args()
 
     def clean_args(self):
+        """ Clean args """
         assert len(self.args.outbound) == 3, "IATA must be in AAA format"
         assert len(self.args.return_) == 3, "IATA must be is AAA format"
         assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
@@ -58,6 +60,7 @@ class Parser:
 
     @staticmethod
     def is_correct_args(date):
+        """ Check date """
         return 20170814 < int(re.sub(r'-', '', date)) < 20180809
 
     def construct_url(self):
@@ -106,7 +109,7 @@ class Parser:
                                 self.lines[way][last - 3] == '':
                     break
 
-# BER JFK 2017-08-15 2017-08-19
+
 if __name__ == "__main__":
     flights = Parser()
     print("Outbound:\n" + '\n'.join([x for x in flights.lines['outbound'] if x != '']))
