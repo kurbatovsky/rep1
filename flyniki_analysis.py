@@ -13,7 +13,7 @@ class Parser:
     """ Parser class """
 
     html = ''
-    url = ''
+    url = 'https://www.flyniki.com/ru/booking/flight/vacancy.php'
     data = {}
 
     def __init__(self):
@@ -83,7 +83,7 @@ class Parser:
     def get_html(self):
         """ Get page """
         with requests.session() as sess:
-            request = sess.get('https://www.flyniki.com/ru/booking/flight/vacancy.php', params=self.options)
+            request = sess.get(self.url, params=self.options)
             post = sess.post(request.url, data=self.data)
             self.html = post.json()['templates']['main']
 
@@ -107,9 +107,14 @@ class Parser:
                     self.lines[way].append(line)
             j += 1
 
+    @staticmethod
+    def by_price(line):
+        """ Get price from line """
+        return int(re.sub('\.', '', re.search(r'\d*\.\d*', line).group()))
+
 
 if __name__ == "__main__":
     FLIGHT = Parser()
-    print("Outbound:\n" + '\n'.join(FLIGHT.lines['outbound']))
+    print("Outbound:\n" + '\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.by_price)))
     if FLIGHT.args.return_date != '':
-        print("Return:\n" + '\n'.join(FLIGHT.lines['return']))
+        print("Return:\n" + '\n'.join(sorted(FLIGHT.lines['return'], key=Parser.by_price)))
