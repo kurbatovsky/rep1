@@ -109,7 +109,7 @@ class Parser:
                     emptiness_counter = 0
                     self.lines[way].append(line)
             j += 1
-        if self.lines[way] == []:
+        if not self.lines[way]:
             self.lines[way].append('No flights found')
 
     @staticmethod
