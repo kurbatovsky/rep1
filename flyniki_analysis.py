@@ -85,7 +85,10 @@ class Parser:
         with requests.session() as sess:
             request = sess.get(self.url, params=self.options)
             post = sess.post(request.url, data=self.data)
-            self.html = post.json()['templates']['main']
+            try:
+                self.html = post.json()['templates']['main']
+            except KeyError:
+                self.html = post.json()['errorRAW'][0]['code']
 
     def parse_html(self, xpath):
         """ Parse HTML """
@@ -106,11 +109,16 @@ class Parser:
                     emptiness_counter = 0
                     self.lines[way].append(line)
             j += 1
+        if self.lines[way] == []:
+            self.lines[way].append('No flights found')
 
     @staticmethod
     def by_price(line):
         """ Get price from line """
-        return int(re.sub(r'\.', '', re.search(r'\d*\.\d*', line).group()))
+        try:
+            return int(re.sub(r'\.', '', re.search(r'\d*\.\d*', line).group()))
+        except AttributeError:
+            return 0
 
 
 if __name__ == "__main__":
