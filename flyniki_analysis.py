@@ -99,7 +99,7 @@ class Parser:
         while emptiness_counter != 4:
             for i in range(5, 9):
                 xpath = 'string(//div[@class="{0} block"]//table/tbody/tr[{1}]/td[{2}]/label/div/span/@title)'
-                line = self.parse_html(xpath.format(way, 2*j - 1, i))
+                line = re.sub(r' (?=,)', '', self.parse_html(xpath.format(way, 2*j - 1, i)))
                 if line == '':
                     emptiness_counter += 1
                 else:
