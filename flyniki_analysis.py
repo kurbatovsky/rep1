@@ -110,7 +110,7 @@ class Parser:
     @staticmethod
     def by_price(line):
         """ Get price from line """
-        return int(re.sub('\.', '', re.search(r'\d*\.\d*', line).group()))
+        return int(re.sub(r'\.', '', re.search(r'\d*\.\d*', line).group()))
 
 
 if __name__ == "__main__":
