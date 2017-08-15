@@ -96,7 +96,7 @@ class Parser:
         """ Get line from HTML """
         j = 1
         emptiness_counter = 0
-        while emptiness_counter != 4:
+        while emptiness_counter <= 4:
             for i in range(5, 9):
                 xpath = 'string(//div[@class="{0} block"]//table/tbody/tr[{1}]/td[{2}]/label/div/span/@title)'
                 line = re.sub(r' (?=,)', '', self.parse_html(xpath.format(way, 2*j - 1, i)))
