@@ -4,12 +4,12 @@ Find flight
 """
 import re
 import argparse
-from datetime import date
+from datetime import date, datetime, timedelta
 import requests
 from lxml import html
 
 
-class Parser:
+class Parser(object):
     """ Parser class """
 
     html = ''
@@ -51,10 +51,12 @@ class Parser:
 
     def clean_args(self):
         """ Clean args """
-        assert re.match(r'^[A-Z][A-Z][A-Z]$',
-                        self.args.outbound).group() == self.args.outbound, "IATA must be in AAA format"
-        assert re.match(r'^[A-Z][A-Z][A-Z]$',
-                        self.args.return_).group() == self.args.return_, "IATA must be is AAA format"
+        assert re.match(
+            r'^[A-Z][A-Z][A-Z]$',
+            self.args.outbound).group() == self.args.outbound, "IATA must be in AAA format"
+        assert re.match(
+            r'^[A-Z][A-Z][A-Z]$',
+            self.args.return_).group() == self.args.return_, "IATA must be is AAA format"
         assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
         if self.args.return_date != '':
             assert self.is_correct_args(self.args.return_date), "Incorrect return date"
@@ -68,7 +70,7 @@ class Parser:
     def is_correct_args(date_):
         """ Check date """
         today = date.today()
-        return Parser.date_to_int(today) < Parser.date_to_int(date_) < Parser.date_to_int(today) + 10000
+        return today < datetime.strptime(date_, "%Y-%m-%d").date() < today + timedelta(days=355)
 
     def form_options(self):
         """ Form options """
@@ -82,9 +84,21 @@ class Parser:
 
     def get_html(self):
         """ Get page """
+        data = {'_ajax[templates][]': 'main',
+                '_ajax[requestParams][departure]': self.args.outbound,
+                '_ajax[requestParams][destination]': self.args.return_,
+                '_ajax[requestParams][outboundDate]': self.args.departure_date,
+                '_ajax[requestParams][returnDate]': self.args.return_date,
+                '_ajax[requestParams][adultCount]': '1',
+                '_ajax[requestParams][childCount]': '0',
+                '_ajax[requestParams][infantCount]': '0',
+                '_ajax[requestParams][returnDeparture]': '',
+                '_ajax[requestParams][returnDestination]': '',
+                '_ajax[requestParams][openDateOverview]': '',
+                '_ajax[requestParams][oneway]': '' if self.args.return_date != '' else 1}
         with requests.session() as sess:
             request = sess.get(self.url, params=self.options)
-            post = sess.post(request.url, data=self.data)
+            post = sess.post(request.url, data=data)
             try:
                 self.html = post.json()['templates']['main']
             except KeyError:
@@ -97,18 +111,10 @@ class Parser:
 
     def get_line(self, way="outbound"):
         """ Get line from HTML """
-        j = 1
-        emptiness_counter = 0
-        while emptiness_counter <= 4:
-            for i in range(5, 9):
-                xpath = 'string(//div[@class="{0} block"]//table/tbody/tr[{1}]/td[{2}]/label/div/span/@title)'
-                line = re.sub(r' (?=,)', '', self.parse_html(xpath.format(way, 2*j - 1, i)))
-                if line == '':
-                    emptiness_counter += 1
-                else:
-                    emptiness_counter = 0
-                    self.lines[way].append(line)
-            j += 1
+        tree = html.fromstring(self.html)
+        xpath = '//div[@class="{0} block"]//tr[@role="group"]'
+        for tr in tree.xpath(xpath.format(way)):
+            self.lines[way].extend(tr.xpath('td[@role="radio"]//label/div[@class="current"]/span/@title'))
         if not self.lines[way]:
             self.lines[way].append('No flights found')
 
@@ -116,7 +122,7 @@ class Parser:
     def by_price(line):
         """ Get price from line """
         try:
-            return int(re.sub(r'\.', '', re.search(r'\d*\.\d*', line).group()))
+            return float(re.sub(r',', '.', re.sub(r'\.', '', re.search(r'\d*\.\d*,\d*', line).group())))
         except AttributeError:
             return 0
 
