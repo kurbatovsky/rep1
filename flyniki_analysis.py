@@ -114,7 +114,7 @@ class Parser(object):
         tree = html.fromstring(self.html)
         xpath = '//div[@class="{0} block"]//tr[@role="group"]'
         for tr in tree.xpath(xpath.format(way)):
-            self.lines[way].extend(tr.xpath('td[@role="radio"]//label/div[@class="current"]/span/@title'))
+            self.lines[way].extend(tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title'))
         if not self.lines[way]:
             self.lines[way].append('No flights found')
 
