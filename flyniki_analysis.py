@@ -5,6 +5,7 @@ Find flight
 import re
 import argparse
 from datetime import date, datetime, timedelta
+import itertools
 import requests
 from lxml import html
 
@@ -20,6 +21,7 @@ class Parser(object):
         """ Initialization """
         self.args = self.parse_args()
         self.options = {}
+        self.currency = ''
         self.clean_args()
         self.data = {'_ajax[templates][]': 'main',
                      '_ajax[requestParams][departure]': self.args.outbound,
@@ -34,10 +36,15 @@ class Parser(object):
                      '_ajax[requestParams][openDateOverview]': '',
                      '_ajax[requestParams][oneway]': '' if self.args.return_date != '' else 1}
         self.lines = {'outbound': [], 'return': []}
+        self.combinations = []
         self.form_options()
         self.get_html()
         self.get_line()
         self.get_line(way='return')
+        self.get_combinations()
+        self.set_total_cost()
+        self.clean_line_from_combinations()
+        self.get_currency()
 
     @staticmethod
     def parse_args():
@@ -52,19 +59,14 @@ class Parser(object):
     def clean_args(self):
         """ Clean args """
         assert re.match(
-            r'^[A-Z][A-Z][A-Z]$',
+            r'^[A-Z]{3,3}$',
             self.args.outbound).group() == self.args.outbound, "IATA must be in AAA format"
         assert re.match(
-            r'^[A-Z][A-Z][A-Z]$',
+            r'^[A-Z]{3,3}$',
             self.args.return_).group() == self.args.return_, "IATA must be is AAA format"
         assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
         if self.args.return_date != '':
             assert self.is_correct_args(self.args.return_date), "Incorrect return date"
-
-    @staticmethod
-    def date_to_int(date_):
-        """ Convert date to int """
-        return int(re.sub(r'-', '', str(date_)))
 
     @staticmethod
     def is_correct_args(date_):
@@ -104,11 +106,6 @@ class Parser(object):
             except KeyError:
                 self.html = post.json()['errorRAW'][0]['code']
 
-    def parse_html(self, xpath):
-        """ Parse HTML """
-        tree = html.fromstring(self.html)
-        return tree.xpath(xpath)
-
     def get_line(self, way="outbound"):
         """ Get line from HTML """
         tree = html.fromstring(self.html)
@@ -119,16 +116,52 @@ class Parser(object):
             self.lines[way].append('No flights found')
 
     @staticmethod
-    def by_price(line):
+    def get_price(line):
         """ Get price from line """
         try:
             return float(re.sub(r',', '.', re.sub(r'\.', '', re.search(r'\d*\.\d*,\d*', line).group())))
         except AttributeError:
             return 0
 
+    @staticmethod
+    def by_price(tup):
+        """ Function for sort """
+        return float(tup[2])
+
+    def get_combinations(self):
+        """ Return all combinations of outbound and return flights """
+        self.combinations = list(itertools.product(self.lines['outbound'], self.lines['return']))
+
+    @staticmethod
+    def total_cost(tup):
+        """ Return total cost of outbound and return flights """
+        return str(Parser.get_price(tup[0]) + Parser.get_price(tup[1]))
+
+    def set_total_cost(self):
+        """ Set total cost in combinations list """
+        for i in range(len(self.combinations)):
+            self.combinations[i] = self.combinations[i] + (self.total_cost(self.combinations[i]), )
+
+    @staticmethod
+    def clean_line(line):
+        """ Delete price from line """
+        return re.sub(r': \d*\.\d*,\d*', '', line)
+
+    def clean_line_from_combinations(self):
+        """ Delete all prices from combinations """
+        for i in range(len(self.combinations)):
+            self.combinations[i] = (self.clean_line(self.combinations[i][0]), self.clean_line(self.combinations[i][1]), self.combinations[i][2])
+
+    def get_currency(self):
+        """ get currency from HTML """
+        tree = html.fromstring(self.html)
+        xpath = '//div[@class="outbound block"]//thead/tr[2]/th[4]/text()'
+        self.currency = tree.xpath(xpath)[0]
+
 
 if __name__ == "__main__":
     FLIGHT = Parser()
-    print("Outbound:\n" + '\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.by_price)))
     if FLIGHT.args.return_date != '':
-        print("Return:\n" + '\n'.join(sorted(FLIGHT.lines['return'], key=Parser.by_price)))
+        print("Combinations:\n" + '{0}\n'.join(['  —   '.join(x) for x in sorted(FLIGHT.combinations, key=Parser.by_price)]).format(FLIGHT.currency) + FLIGHT.currency)
+    else:
+        print("Outbound:\n" + '\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.get_price)))
