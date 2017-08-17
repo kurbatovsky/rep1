@@ -164,4 +164,4 @@ if __name__ == "__main__":
     if FLIGHT.args.return_date != '':
         print("Combinations:\n" + '{0}\n'.join(['  —   '.join(x) for x in sorted(FLIGHT.combinations, key=Parser.by_price)]).format(FLIGHT.currency) + FLIGHT.currency)
     else:
-        print("Outbound:\n" + '\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.get_price)))
+        print("Outbound:\n" + '{0}\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.get_price)).format(FLIGHT.currency) + FLIGHT.currency)
