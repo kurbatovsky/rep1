@@ -22,13 +22,13 @@ class Parser(object):
         self.currency = ''
         self.check_args()
         self.lines = {'outbound': [], 'return': []}
-        self.combinations = []
+        self.flights_combinations = []
         self.form_options()
         try:
             self.get_html()
             self.get_line()
             self.get_line(way='return')
-            self.get_combinations()
+            self.get_flights_combinations()
             self.set_total_cost()
             self.clean_line_from_combinations()
             self.get_currency()
@@ -122,9 +122,9 @@ class Parser(object):
         """ Function for sort """
         return float(tup[2])
 
-    def get_combinations(self):
+    def get_flights_combinations(self):
         """ Return all combinations of outbound and return flights """
-        self.combinations = list(itertools.product(self.lines['outbound'], self.lines['return']))
+        self.flights_combinations = list(itertools.product(self.lines['outbound'], self.lines['return']))
 
     def calculate_total_cost(self, tup):
         """ Return total cost of outbound and return flights """
@@ -132,8 +132,8 @@ class Parser(object):
 
     def set_total_cost(self):
         """ Set total cost in combinations list """
-        for i in range(len(self.combinations)):
-            self.combinations[i] = self.combinations[i] + (self.calculate_total_cost(self.combinations[i]), )
+        for i in range(len(self.flights_combinations)):
+            self.flights_combinations[i] = self.flights_combinations[i] + (self.calculate_total_cost(self.flights_combinations[i]), )
 
     @staticmethod
     def clean_line(line):
@@ -142,7 +142,7 @@ class Parser(object):
 
     def clean_line_from_combinations(self):
         """ Delete all prices from combinations """
-        self.combinations = list(map(lambda x: (self.clean_line(x[0]), self.clean_line(x[1]), x[2]), self.combinations))
+        self.flights_combinations = list(map(lambda x: (self.clean_line(x[0]), self.clean_line(x[1]), x[2]), self.flights_combinations))
 
     def get_currency(self):
         """ get currency from HTML """
@@ -153,6 +153,6 @@ class Parser(object):
 if __name__ == "__main__":
     FLIGHT = Parser()
     if FLIGHT.args.return_date != '':
-        print("Combinations:\n" + '{0}\n'.join(['  —   '.join(x) for x in sorted(FLIGHT.combinations, key=Parser.get_price_from_tuple)]).format(FLIGHT.currency) + FLIGHT.currency)
+        print("Combinations:\n" + '{0}\n'.join(['  —   '.join(x) for x in sorted(FLIGHT.flights_combinations, key=Parser.get_price_from_tuple)]).format(FLIGHT.currency) + FLIGHT.currency)
     else:
         print("Outbound:\n" + '{0}\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.get_price_from_string)).format(FLIGHT.currency) + FLIGHT.currency)
