@@ -58,18 +58,14 @@ class Parser(object):
 
     def clean_args(self):
         """ Clean args """
-        assert re.match(
-            r'^[A-Z]{3}$',
-            self.args.outbound).group() == self.args.outbound, "IATA must be in AAA format"
+        assert re.match(r'^[A-Z]{3}$',
+                        self.args.outbound).group() == self.args.outbound, "IATA must be is AAA format"
         assert re.match(
             r'^[A-Z]{3}$',
             self.args.return_).group() == self.args.return_, "IATA must be is AAA format"
         assert self.is_correct_args(self.args.departure_date), "Incorrect departure date"
         if self.args.return_date != '':
             assert self.is_correct_args(self.args.return_date), "Incorrect return date"
-            assert datetime.strptime(self.args.return_date, "%Y-%m-%d") >\
-                   datetime.strptime(self.args.departure_date, "%Y-%m-%d") is True,\
-                "Return date must be after departure date"
 
     @staticmethod
     def is_correct_args(date_):
