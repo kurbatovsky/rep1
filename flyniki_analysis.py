@@ -156,7 +156,10 @@ class Parser(object):
         """ get currency from HTML """
         tree = html.fromstring(self.html)
         xpath = '//div[@class="outbound block"]//thead/tr[2]/th[4]/text()'
-        self.currency = tree.xpath(xpath)[0]
+        try:
+            self.currency = tree.xpath(xpath)[0]
+        except:
+            pass
 
 
 if __name__ == "__main__":
