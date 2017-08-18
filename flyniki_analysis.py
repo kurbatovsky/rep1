@@ -179,14 +179,11 @@ def main():
             args = raw_input().split(' ')
             if len(args) == 3:
                 args.append('')
-            info = Flight_info(outbound_airport=args[0],
-                               return_airport=args[1],
-                               outbound_date=args[2],
-                               return_date=args[3])
+            info = Flight_info(*args)
             if check_args(info):
                 break
     flight = Parser(info)
-    if flight.args[3] != '':
+    if flight.args.return_date:
         flight_lines_combinations = ['  —   '.join(x) for x in
                                      sorted(flight.flights_combinations, key=Parser.get_price_from_tuple)]
         print("Combinations:\n" + '{0}\n'.join(flight_lines_combinations).format(flight.currency) + flight.currency)
