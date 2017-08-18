@@ -2,6 +2,7 @@
 """
 Find flight
 """
+import sys
 import re
 import argparse
 from datetime import date, datetime, timedelta
@@ -13,90 +14,54 @@ from lxml import html
 class Parser(object):
     """ Parser class """
 
-    def __init__(self):
+    def __init__(self, args):
         """ Initialization """
-        self.args = ''
+        self.args = args
         self.tree = ''
         self.currency = ''
         self.lines = {'outbound': [], 'return': []}
         self.flights_combinations = []
-        self.init_variables()
+        self.init_variables(args)
 
-    def init_variables(self):
-        self.args = self.parse_args()
-        self.check_args()
+    def init_variables(self, args):
+        self.args = args
         try:
             self.get_html()
         except KeyError:
             print("Flights not found")
             exit(0)
         self.get_line()
-        if self.args.return_date != '':
+        if self.args[3] != '':
             self.get_line(way='return')
         self.get_flights_combinations()
         self.set_total_cost()
         self.clean_line_from_combinations()
         self.get_currency()
 
-
-
-    @staticmethod
-    def parse_args():
-        """ Parse args """
-        parser = argparse.ArgumentParser()
-        parser.add_argument('outbound_airport', help="start IATA")
-        parser.add_argument('return_airport', help="finish IATA")
-        parser.add_argument('departure_date', help="Departure date")
-        parser.add_argument('return_date', nargs='?', help="Return date", default='')
-        return parser.parse_args()
-
-    def check_args(self):
-        """ Clean args """
-        try:
-            assert re.match(r'^[A-Z]{3}$',
-                            self.args.outbound_airport).group() == self.args.outbound_airport, "IATA must be is AAA format"
-            assert re.match(
-                r'^[A-Z]{3}$',
-                self.args.return_airport).group() == self.args.return_airport, "IATA must be is AAA format"
-        except AttributeError:
-            raise AssertionError, "IATA must be is AAA format"
-        assert self.is_correct_date(self.args.departure_date), "Incorrect departure date"
-        if self.args.return_date != '':
-            assert self.is_correct_date(self.args.return_date), "Incorrect return date"
-
-    @staticmethod
-    def is_correct_date(flight_date):
-        """ Check date """
-        today = date.today()
-        try:
-            return today < datetime.strptime(flight_date, "%Y-%m-%d").date() < today + timedelta(days=355)
-        except ValueError:
-            raise ValueError, "IATA must be is AAA format"
-
     def form_options(self):
         """ Form options """
-        return {'departure': self.args.outbound_airport,
-                'destination': self.args.return_airport,
-                'outboundDate': self.args.departure_date,
-                'oneway': '' if self.args.return_date != '' else 1,
-                'returnDate': self.args.return_date,
+        return {'departure': self.args[0],
+                'destination': self.args[1],
+                'outboundDate': self.args[2],
+                'oneway': '' if self.args[3] != '' else 1,
+                'returnDate': self.args[3],
                 'openDateOverview': '0',
                 'adultCount': 1}
 
     def get_html(self):
         """ Get page """
         data = {'_ajax[templates][]': 'main',
-                '_ajax[requestParams][departure]': self.args.outbound_airport,
-                '_ajax[requestParams][destination]': self.args.return_airport,
-                '_ajax[requestParams][outboundDate]': self.args.departure_date,
-                '_ajax[requestParams][returnDate]': self.args.return_date,
+                '_ajax[requestParams][departure]': self.args[0],
+                '_ajax[requestParams][destination]': self.args[1],
+                '_ajax[requestParams][outboundDate]': self.args[2],
+                '_ajax[requestParams][returnDate]': self.args[3],
                 '_ajax[requestParams][adultCount]': '1',
                 '_ajax[requestParams][childCount]': '0',
                 '_ajax[requestParams][infantCount]': '0',
                 '_ajax[requestParams][returnDeparture]': '',
                 '_ajax[requestParams][returnDestination]': '',
                 '_ajax[requestParams][openDateOverview]': '',
-                '_ajax[requestParams][oneway]': '' if self.args.return_date != '' else 1}
+                '_ajax[requestParams][oneway]': '' if self.args[3] != '' else 1}
         url = 'https://www.flyniki.com/ru/booking/flight/vacancy.php'
         with requests.session() as sess:
             request = sess.get(url, params=self.form_options())
@@ -148,13 +113,73 @@ class Parser(object):
         self.flights_combinations = list(map(lambda x: (self.clean_line(x[0]), self.clean_line(x[1]), x[2]), self.flights_combinations))
 
     def get_currency(self):
-        """ get currency from HTML """
+        """ Get currency from HTML """
         xpath = '//div[@class="outbound block"]//thead/tr[2]/th[4]/text()'
         self.currency = self.tree.xpath(xpath)[0]
 
-if __name__ == "__main__":
-    FLIGHT = Parser()
-    if FLIGHT.args.return_date != '':
-        print("Combinations:\n" + '{0}\n'.join(['  —   '.join(x) for x in sorted(FLIGHT.flights_combinations, key=Parser.get_price_from_tuple)]).format(FLIGHT.currency) + FLIGHT.currency)
+
+def check_args(args):
+    """ Check args """
+    try:
+        if re.match(r'^[A-Z]{3}$', args[0]).group() != args[0]:
+            print("IATA must be in AAA format")
+            return False
+        elif re.match(r'^[A-Z]{3}$', args[1]).group() != args[1]:
+            print("IATA must be in AAA format")
+            return False
+    except AttributeError:
+        print("IATA must be in AAA format")
+        return False
+    if not is_correct_date(args[2]):
+        print("Date must be in YYYY-MM-DD format")
+        return False
+    if args[3] != '':
+        if not is_correct_date(args[3]):
+            print("Date must be in YYYY-MM-DD format")
+            return False
+    return True
+
+
+def is_correct_date(flight_date):
+    """ Check date """
+    today = date.today()
+    try:
+        return today < datetime.strptime(flight_date, "%Y-%m-%d").date() < today + timedelta(days=355)
+    except ValueError:
+        return False
+
+
+def parse_args():
+    """ Parse args """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('outbound_airport', help="start IATA")
+    parser.add_argument('return_airport', help="finish IATA")
+    parser.add_argument('departure_date', help="Departure date")
+    parser.add_argument('return_date', nargs='?', help="Return date", default='')
+    args = parser.parse_args()
+    return [args.outbound_airport, args.return_airport, args.departure_date, args.return_date]
+
+
+def main():
+    args = parse_args()
+    if check_args(args):
+        pass
     else:
-        print(re.sub(r',0', '.', "Outbound:\n" + '{0}\n'.join(sorted(FLIGHT.lines['outbound'], key=Parser.get_price_from_string)).format(FLIGHT.currency) + FLIGHT.currency))
+        while True:
+            print("Try again")
+            args = raw_input().split(' ')
+            if len(args) == 3:
+                args.append('')
+            if check_args(args):
+                break
+    flight = Parser(args)
+    if flight.args[3] != '':
+        flight_lines_combinations = ['  —   '.join(x) for x in
+                                     sorted(flight.flights_combinations, key=Parser.get_price_from_tuple)]
+        print("Combinations:\n" + '{0}\n'.join(flight_lines_combinations).format(flight.currency) + flight.currency)
+    else:
+        flight_lines_outbound = sorted(flight.lines['outbound'], key=Parser.get_price_from_string)
+        print(re.sub(r',0', '.', "Outbound:\n" + '{0}\n'.join(flight_lines_outbound).format(flight.currency) + flight.currency))
+
+if __name__ == "__main__":
+    main()
