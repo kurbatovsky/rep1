@@ -182,13 +182,9 @@ def main():
             if check_args(info):
                 break
     flight = Parser(info)
-    if flight.args.return_date:
-        flight_lines_combinations = ['  —   '.join(x) for x in
-                                     sorted(flight.flights_combinations, key=Parser.get_price_from_tuple)]
-        print("Combinations:\n" + '{0}\n'.join(flight_lines_combinations).format(flight.currency) + flight.currency)
-    else:
-        flight_lines_outbound = sorted(flight.lines['outbound'], key=Parser.get_price_from_string)
-        print(re.sub(r',0', '.', "Outbound:\n" + '{0}\n'.join(flight_lines_outbound).format(flight.currency) + flight.currency))
+    flight_lines_combinations = sorted(flight.flights_combinations if info.return_date else flight.lines['outbound'], key=flight.get_price_from_tuple if info.return_date else flight.get_price_from_string)
+    flight_lines_combinations = ['  —   '.join(x) for x in flight_lines_combinations] if info.return_date else [re.sub(r',(?=\d)', '.', x) for x in flight.lines['outbound']]
+    print("Combinations:\n" + '{0}\n'.join(flight_lines_combinations).format(flight.currency) + flight.currency)
 
 if __name__ == "__main__":
     main()
