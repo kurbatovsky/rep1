@@ -31,7 +31,7 @@ class Parser(object):
             print("Flights not found")
             exit(0)
         self.get_line()
-        if self.args[3] != '':
+        if self.args.return_date:
             self.get_line(way='return')
         self.get_flights_combinations()
         self.set_total_cost()
