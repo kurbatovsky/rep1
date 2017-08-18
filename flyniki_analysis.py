@@ -2,7 +2,6 @@
 """
 Find flight
 """
-import sys
 import re
 import argparse
 from datetime import date, datetime, timedelta
@@ -24,6 +23,7 @@ class Parser(object):
         self.init_variables(args)
 
     def init_variables(self, args):
+        """ Variables initialization """
         self.args = args
         try:
             self.get_html()
@@ -92,7 +92,8 @@ class Parser(object):
 
     def get_flights_combinations(self):
         """ Return all combinations of outbound and return flights """
-        self.flights_combinations = list(itertools.product(self.lines['outbound'], self.lines['return']))
+        self.flights_combinations = list(itertools.product(self.lines['outbound'],
+                                                           self.lines['return']))
 
     def calculate_total_cost(self, tuple_with_flights):
         """ Return total cost of outbound and return flights """
@@ -110,7 +111,9 @@ class Parser(object):
 
     def clean_line_from_combinations(self):
         """ Delete all prices from combinations """
-        self.flights_combinations = list(map(lambda x: (self.clean_line(x[0]), self.clean_line(x[1]), x[2]), self.flights_combinations))
+        self.flights_combinations = list(map(lambda x: (self.clean_line(x[0]),
+                                                        self.clean_line(x[1]),
+                                                        x[2]), self.flights_combinations))
 
     def get_currency(self):
         """ Get currency from HTML """
@@ -161,12 +164,11 @@ def parse_args():
 
 
 def main():
+    """ Main function """
     args = parse_args()
-    if check_args(args):
-        pass
-    else:
+    if not check_args(args):
         while True:
-            print("Try again")
+            print("String must be in AAA ZZZ YYYY-MM-DD [YYYY-MM-DD] format, try again")
             args = raw_input().split(' ')
             if len(args) == 3:
                 args.append('')
