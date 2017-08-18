@@ -43,7 +43,7 @@ class Parser(object):
         return {'departure': self.args.outbound_airport,
                 'destination': self.args.return_airport,
                 'outboundDate': self.args.outbound_date,
-                'oneway': '' if self.args.return_date != '' else 1,
+                'oneway': '' if self.args.return_date else 1,
                 'returnDate': self.args.return_date,
                 'openDateOverview': '0',
                 'adultCount': 1}
@@ -61,7 +61,7 @@ class Parser(object):
                 '_ajax[requestParams][returnDeparture]': '',
                 '_ajax[requestParams][returnDestination]': '',
                 '_ajax[requestParams][openDateOverview]': '',
-                '_ajax[requestParams][oneway]': '' if self.args.return_date != '' else 1}
+                '_ajax[requestParams][oneway]': '' if self.args.return_date else 1}
         url = 'https://www.flyniki.com/ru/booking/flight/vacancy.php'
         with requests.session() as sess:
             request = sess.get(url, params=self.form_options())
