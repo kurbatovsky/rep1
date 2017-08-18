@@ -98,12 +98,11 @@ class Parser(object):
 
     def calculate_total_cost(self, tuple_with_flights):
         """ Return total cost of outbound and return flights """
-        return str(self.get_price_from_string(tuple_with_flights[0]) + self.get_price_from_string(tuple_with_flights[1]))
+        return str(sum(map(self.get_price_from_string, tuple_with_flights)))
 
     def set_total_cost(self):
         """ Set total cost in combinations list """
-        for i in range(len(self.flights_combinations)):
-            self.flights_combinations[i] = self.flights_combinations[i] + (self.calculate_total_cost(self.flights_combinations[i]), )
+        self.flights_combinations = [x + (self.calculate_total_cost(x), ) for x in self.flights_combinations]
 
     @staticmethod
     def clean_line(line):
