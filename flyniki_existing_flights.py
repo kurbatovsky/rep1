@@ -95,10 +95,13 @@ def parse_args():
 
 def main():
     """ Main function """
+    if parse_args().refresh:
+        files = os.listdir("Flights")
+        for file in files:
+            os.remove('{0}\\Flights\\{1}'.format(os.path.abspath(os.curdir), file))
+        os.rmdir("Flights")
     if not os.path.exists("Flights"):
         os.mkdir("Flights")
-        refresh()
-    if parse_args().refresh:
         refresh()
 
 if __name__ == '__main__':
