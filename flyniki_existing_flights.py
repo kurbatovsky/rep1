@@ -3,6 +3,7 @@
 Find existing flights for all airports
 """
 import os
+import argparse
 import requests
 
 
@@ -13,23 +14,22 @@ class AllFlights:
         self.all_ways = {}
 
     def get_airports(self, is_destination=False):
-        url = 'https://www.flyniki.com/ru/site/json/suggestAirport.php'
         with requests.session() as sess:
             if not is_destination:
-                request = sess.get(url, params=self.form_options())
-                json = request.json()["suggestList"]
-                for i in range(len(json)):
-                    self.all_airports.append(json[i]["code"])
+                self.all_airports = list(iata for iata in self.get_airports_from_json(sess, self.form_options()))
             else:
+                self.all_ways = [{'departure': iata, 'destinations': []} for iata in self.all_airports]
                 for way in self.all_ways:
-                    request = sess.get(url, params=self.form_options(way['departure']))
-                    json = request.json()["suggestList"]
-                    for i in range(len(json)):
-                        way['destinations'].append(json[i]["code"])
+                    way['destinations'] = list(iata for iata in self.get_airports_from_json(sess, self.form_options(way['departure'])))
 
-    def construct_ways(self):
-        """ Construct ways list """
-        self.all_ways = [{'departure': x, 'destinations':[]} for x in self.all_airports]
+    @staticmethod
+    def get_airports_from_json(sess, params):
+        result = list()
+        url = 'https://www.flyniki.com/ru/site/json/suggestAirport.php'
+        request = sess.get(url, params=params)
+        json = request.json()["suggestList"]
+        for iata in json:
+            yield iata["code"]
 
     @staticmethod
     def form_options(code=''):
@@ -49,7 +49,6 @@ class AllFlights:
 
     def search_for_all_ways(self):
         self.get_airports()
-        self.construct_ways()
         self.get_airports(is_destination=True)
 
     def list_to_dict(self):
@@ -74,17 +73,18 @@ def write_in_files(ways):
                 flights_file.write(destination + '\n')
 
 
-def main():
-    """ Main function """
-    try:
-        os.mkdir("Flights")
-    except WindowsError:
-        pass
+def refresh():
     flights = AllFlights()
     flights.search_for_all_ways()
     write_in_files(flights.all_ways)
     output(flights.all_ways)
-    flights.list_to_dict()
+
+
+def main():
+    """ Main function """
+    if not os.path.exists("Flights"):
+        os.mkdir("Flights")
+        refresh()
 
 if __name__ == '__main__':
     main()
