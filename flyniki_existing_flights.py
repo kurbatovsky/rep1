@@ -2,18 +2,20 @@
 """
 Find existing flights for all airports
 """
-import os
+import os.path
 import argparse
 import requests
 
 
-class AllFlights:
+class AllFlights(object):
     """ Get all flights for each airports from flyniki """
     def __init__(self):
+        """ Object initialization """
         self.all_airports = []
         self.all_ways = {}
 
     def get_airports(self, is_destination=False):
+        """ Get airports"""
         with requests.session() as sess:
             if not is_destination:
                 self.all_airports = list(iata for iata in self.get_airports_from_json(sess, self.form_options()))
@@ -24,7 +26,7 @@ class AllFlights:
 
     @staticmethod
     def get_airports_from_json(sess, params):
-        result = list()
+        """ Get airports from json """
         url = 'https://www.flyniki.com/ru/site/json/suggestAirport.php'
         request = sess.get(url, params=params)
         json = request.json()["suggestList"]
@@ -48,10 +50,12 @@ class AllFlights:
                 'routesource[1]': 'partner'}
 
     def search_for_all_ways(self):
+        """ Search for all ways """
         self.get_airports()
         self.get_airports(is_destination=True)
 
     def list_to_dict(self):
+        """ Transform all_ways from list to dict """
         result = {}
         for way in self.all_ways:
             result[way['departure']] = way['destinations']
@@ -67,6 +71,7 @@ def output(ways):
 
 
 def write_in_files(ways):
+    """ Write ways in files"""
     for way in ways:
         with open(os.path.abspath(os.curdir) + '\\Flights\{}.txt'.format(way['departure']), 'w') as flights_file:
             for destination in way['destinations']:
@@ -74,16 +79,26 @@ def write_in_files(ways):
 
 
 def refresh():
+    """ Refresh info """
     flights = AllFlights()
     flights.search_for_all_ways()
     write_in_files(flights.all_ways)
     output(flights.all_ways)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--refresh', help="refresh information")
+    args = parser.parse_args()
+    return args
+
+
 def main():
     """ Main function """
     if not os.path.exists("Flights"):
         os.mkdir("Flights")
+        refresh()
+    if parse_args().refresh:
         refresh()
 
 if __name__ == '__main__':
