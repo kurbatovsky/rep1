@@ -73,7 +73,7 @@ def output(ways):
 def write_in_files(ways):
     """ Write ways in files"""
     for way in ways:
-        with open(os.path.abspath(os.curdir) + '\\Flights\{}.txt'.format(way['departure']), 'w') as flights_file:
+        with open(os.path.join(os.path.abspath(os.curdir), 'Flights', '{}.txt'.format(way['departure'])), 'w') as flights_file:
             for destination in way['destinations']:
                 flights_file.write(destination + '\n')
 
@@ -87,6 +87,7 @@ def refresh():
 
 
 def parse_args():
+    """ Parse args """
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--refresh', help="refresh information")
     args = parser.parse_args()
@@ -98,7 +99,7 @@ def main():
     if parse_args().refresh:
         files = os.listdir("Flights")
         for file in files:
-            os.remove('{0}\\Flights\\{1}'.format(os.path.abspath(os.curdir), file))
+            os.remove(os.path.join(os.path.abspath(os.curdir), 'Flights', file))
         os.rmdir("Flights")
     if not os.path.exists("Flights"):
         os.mkdir("Flights")
