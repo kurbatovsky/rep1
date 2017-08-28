@@ -165,14 +165,10 @@ def parse_args():
 
 
 def check_way(info):
-    if not os.path.exists('Flights'):
         flights = fef.AllFlights()
         flights.search_for_all_ways()
         all_ways = flights.list_to_dict()
         return info.return_airport in all_ways[info.outbound_airport]
-    else:
-        with open(os.path.abspath(os.curdir) + '\\Flights\{}.txt'.format(info.outbound_airport)) as flight_file:
-            return info.return_airport in flight_file
 
 
 def main():
