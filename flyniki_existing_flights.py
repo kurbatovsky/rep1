@@ -61,6 +61,11 @@ class AllFlights(object):
             result[way['departure']] = way['destinations']
         return result
 
+    def check_way(self, info):
+        self.search_for_all_ways()
+        all_ways = self.list_to_dict()
+        return info.return_airport in all_ways[info.outbound_airport]
+
 
 def output(ways):
     """ Output function """
