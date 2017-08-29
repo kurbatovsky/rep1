@@ -6,6 +6,7 @@ import re
 import argparse
 from datetime import date, datetime, timedelta
 import itertools
+import copy
 import collections
 import requests
 from lxml import html
@@ -21,22 +22,26 @@ class Parser(object):
         self.tree = ''
         self.currency = ''
         self.lines = {'outbound': [], 'return': []}
+        self.output = []
         self.flights_combinations = []
         self.init_variables()
         self.index = -1
 
     def __iter__(self):
+        """ Iteration """
         return self
 
     def next(self):
+        """ Next element """
         self.index += 1
         if self.index < self.__get_length():
-            return self.lines['outbound'][self.index]
+            return self.output[self.index]
         else:
             raise StopIteration
 
     def __get_length(self):
-        return len(self.lines['outbound'])
+        """ Get length """
+        return len(self.output)
 
     def init_variables(self):
         """ Variables initialization """
@@ -87,13 +92,15 @@ class Parser(object):
         """ Get line from HTML """
         xpath = '//div[@class="{0} block"]//tr[@role="group"]'
         for tr in self.tree.xpath(xpath.format(way)):
-            self.lines[way].extend(map(lambda x: self.str_to_flight(re.sub(r',\d', '.0', re.sub(r'\.', '', x))), tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title')))
+            self.lines[way].extend(map(lambda x: self.str_to_flight(re.sub(r',\d', '.0', re.sub(r'\.', '', x))),
+                                       tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title')))
         if not self.lines[way]:
             print('No flights found')
             exit(0)
 
     @staticmethod
     def str_to_flight(flight_str):
+        """ Transform string to Flight """
         x = Flight(*flight_str.split(','))
         return x
 
@@ -127,31 +134,74 @@ class Parser(object):
     @staticmethod
     def clean_line(line):
         """ Delete price from line """
-        return re.sub(r': \d+,\d+', '', line)
+        x = re.sub(r': \d+,\d+', '', line)
+        return x
 
     def clean_line_from_combinations(self):
         """ Delete all prices from combinations """
-        self.flights_combinations = list(map(lambda x: (self.clean_line(x[0]),
-                                                        self.clean_line(x[1]),
-                                                        x[2]), self.flights_combinations))
+        self.flights_combinations = list(map(lambda x: x[0].set_way_back(x[1]), self.flights_combinations))
 
     def get_currency(self):
         """ Get currency from HTML """
         xpath = '//div[@class="outbound block"]//thead/tr[2]/th[4]/text()'
         self.currency = self.tree.xpath(xpath)[0]
 
+    def preparation_to_output(self):
+        """ Form output """
+        if not self.args.return_date:
+            self.output = self.lines['outbound']
+        else:
+            self.output = self.flights_combinations
+
 
 class Flight:
     """ Flight class """
 
     def __init__(self, way, time, duration, price):
+        """ Initialization """
         self.way = way
         self.time = time
         self.duration = duration
         self.price = price
+        self.way_back = ''
+        self.time_back = ''
+        self.duration_back = ''
+        self.price_back = ''
+        self.total_price = price
 
     def __str__(self):
-        return '{0}, {1}, {2}, {3}'.format(self.way, self.time, self.duration, self.price)
+        """ Output function """
+        if not self.price_back:
+            return '{0}, {1}, {2}, {3}'.format(self.way, self.time, self.duration[:-1], self.total_price)
+        else:
+            return '{0}, {1}, {2}, {3} — {4}, {5}, {6}, {7} {8}'.format(self.way,
+                                                                        self.time,
+                                                                        self.duration[:-1],
+                                                                        re.sub(r': \d+\.\d\d', '', self.price),
+                                                                        self.way_back,
+                                                                        self.time_back,
+                                                                        self.duration_back[:-1],
+                                                                        re.sub(r'\d+\.\d\d', '', self.price_back),
+                                                                        self.total_price)
+
+    def set_way_back(self, flight):
+        """ Set way back"""
+        self.way_back = flight.way
+        self.time_back = flight.time
+        self.duration_back = flight.duration
+        self.price_back = flight.price
+        self.__calculate_total_price()
+        return copy.deepcopy(self)
+
+    def __calculate_total_price(self):
+        """ Calculate total price """
+        self.total_price = str(float(re.search(r'\d+\.\d\d', self.price).group())
+                               + float(re.search(r'\d+\.\d\d', self.price_back).group()))
+
+    @staticmethod
+    def price_to_float(flight):
+        """ Transform price from string to float """
+        return float(re.search(r'\d+\.\d+', flight.total_price).group())
 
 
 def check_args(args):
@@ -198,7 +248,11 @@ def parse_args():
 
 def main():
     """ Main function """
-    Flight_info = collections.namedtuple('Flight_info', ['outbound_airport', 'return_airport', 'outbound_date', 'return_date'])
+    Flight_info = collections.namedtuple('Flight_info',
+                                         ['outbound_airport',
+                                          'return_airport',
+                                          'outbound_date',
+                                          'return_date'])
     args = parse_args()
     info = Flight_info(outbound_airport=args.outbound_airport,
                        return_airport=args.return_airport,
@@ -217,11 +271,9 @@ def main():
     all_flights = fef.AllFlights()
     if all_flights.check_way(info):
         flight = Parser(info)
-        for x in flight:
+        flight.preparation_to_output()
+        for x in sorted(flight, key=Flight.price_to_float):
             print(x)
-        """flight_lines_combinations = sorted(flight.flights_combinations if info.return_date else flight.lines['outbound'], key=flight.get_price_from_tuple if info.return_date else flight.get_price_from_string)
-        flight_lines_combinations = ['  —   '.join(x) for x in flight_lines_combinations] if info.return_date else [re.sub(r',(?=\d)', '.', x) for x in flight.lines['outbound']]
-        print("Combinations:\n" + '{0}\n'.join(flight_lines_combinations).format(flight.currency) + flight.currency)"""
     else:
         print("This way doesnt exist")
 
