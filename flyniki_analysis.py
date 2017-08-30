@@ -26,6 +26,7 @@ class Parser(object):
         self.flights_combinations = []
         self.init_variables()
         self.index = -1
+        self.length = self.__get_length()
 
     def __iter__(self):
         """ Iteration """
@@ -34,10 +35,20 @@ class Parser(object):
     def next(self):
         """ Next element """
         self.index += 1
-        if self.index < self.__get_length():
-            return self.output[self.index]
-        else:
-            raise StopIteration
+        while self.index < self.length:
+            try:
+                yield self.output[self.index]
+            except StopIteration:
+                break
+
+    def output_flights(self):
+        self.preparation_to_output()
+        try:
+            for x in self.output:
+                print(x)
+        except StopIteration:
+            pass
+
 
     def __get_length(self):
         """ Get length """
@@ -101,9 +112,7 @@ class Parser(object):
     @staticmethod
     def str_to_flight(flight_str):
         """ Transform string to Flight """
-        x = Flight(*flight_str.split(','))
-        return x
-
+        return Flight(*flight_str.split(','))
 
     @staticmethod
     def get_price_from_string(line):
@@ -149,9 +158,10 @@ class Parser(object):
     def preparation_to_output(self):
         """ Form output """
         if not self.args.return_date:
-            self.output = self.lines['outbound']
+            self.output = sorted(self.lines['outbound'], key=Flight.flight_price_to_float)
         else:
-            self.output = self.flights_combinations
+            self.output = sorted(self.flights_combinations, key=Flight.flight_price_to_float)
+        self.length = self.__get_length()
 
 
 class Flight:
@@ -177,11 +187,11 @@ class Flight:
             return '{0}, {1}, {2}, {3} — {4}, {5}, {6}, {7} {8}'.format(self.way,
                                                                         self.time,
                                                                         self.duration[:-1],
-                                                                        re.sub(r': \d+\.\d\d', '', self.price),
+                                                                        self.str_price_to_class(self.price),
                                                                         self.way_back,
                                                                         self.time_back,
                                                                         self.duration_back[:-1],
-                                                                        re.sub(r'\d+\.\d\d', '', self.price_back),
+                                                                        self.str_price_to_class(self.price_back),
                                                                         self.total_price)
 
     def set_way_back(self, flight):
@@ -199,9 +209,14 @@ class Flight:
                                + float(re.search(r'\d+\.\d\d', self.price_back).group()))
 
     @staticmethod
-    def price_to_float(flight):
-        """ Transform price from string to float """
+    def flight_price_to_float(flight):
+        """ Transform price from flight to float """
         return float(re.search(r'\d+\.\d+', flight.total_price).group())
+
+    @staticmethod
+    def str_price_to_class(flight):
+        """ Transform price from string to float """
+        return re.sub(r': \d+\.\d+', '', flight)
 
 
 def check_args(args):
@@ -269,13 +284,12 @@ def main():
             if check_args(info):
                 break
     all_flights = fef.AllFlights()
-    if all_flights.check_way(info):
-        flight = Parser(info)
-        flight.preparation_to_output()
-        for x in sorted(flight, key=Flight.price_to_float):
-            print(x)
-    else:
-        print("This way doesnt exist")
+    # if all_flights.check_way(info):
+    flight = Parser(info)
+    flight.output_flights()
+
+    # else:
+        # print("This way doesnt exist")
 
 if __name__ == "__main__":
     main()
