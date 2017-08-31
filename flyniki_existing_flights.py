@@ -7,33 +7,47 @@ import argparse
 import requests
 
 
+def save_in_file(a_function_to_decorate):
+    def wrapper(*args):
+        result = a_function_to_decorate(*args)
+        with open(os.path.join(os.path.abspath(os.curdir), 'Functions', '{}.txt'.format(a_function_to_decorate.__name__)), 'a') as function_file:
+            function_file.write(str(result))
+            function_file.write('\n')
+        return result
+    return wrapper
+
+
 class AllFlights(object):
     """ Get all flights for each airports from flyniki """
+
+    @save_in_file
     def __init__(self):
         """ Object initialization """
         self.all_airports = []
         self.all_ways = {}
 
-    def get_airports(self, is_destination=False):
+    @save_in_file
+    def get_airports(self):
         """ Get airports"""
         with requests.session() as sess:
-            if not is_destination:
-                self.all_airports = list(iata for iata in self.get_airports_from_json(sess, self.form_options()))
-            else:
-                self.all_ways = [{'departure': iata, 'destinations': []} for iata in self.all_airports]
-                for way in self.all_ways:
-                    way['destinations'] = list(iata for iata in self.get_airports_from_json(sess, self.form_options(way['departure'])))
+            self.all_airports = self.get_airports_from_json(sess, self.form_options())
+            for iata in self.all_airports:
+                self.all_ways[iata] = self.get_airports_from_json(sess, self.form_options(iata))
 
     @staticmethod
+    @save_in_file
     def get_airports_from_json(sess, params):
         """ Get airports from json """
         url = 'https://www.flyniki.com/ru/site/json/suggestAirport.php'
         request = sess.get(url, params=params)
         json = request.json()["suggestList"]
+        result = []
         for iata in json:
-            yield iata["code"]
+            result.append(iata["code"])
+        return result
 
     @staticmethod
+    @save_in_file
     def form_options(code=''):
         """ For options """
         return {'searchfor': 'destinations' if code else 'departures',
@@ -49,48 +63,36 @@ class AllFlights(object):
                 'routesource[0]': 'airberlin',
                 'routesource[1]': 'partner'}
 
-    def search_for_all_ways(self):
-        """ Search for all ways """
-        self.get_airports()
-        self.get_airports(is_destination=True)
-
-    def list_to_dict(self):
-        """ Transform all_ways from list to dict """
-        result = {}
-        for way in self.all_ways:
-            result[way['departure']] = way['destinations']
-        return result
-
+    @save_in_file
     def check_way(self, info):
-        self.search_for_all_ways()
+        self.get_airports()
         all_ways = self.list_to_dict()
         return info.return_airport in all_ways[info.outbound_airport]
 
-
+@save_in_file
 def output(ways):
     """ Output function """
-    for way in ways:
-        print("From {} to:".format(way['departure']))
-        print(' '.join(way['destinations']))
+    for way in ways.keys():
+        print("From {} to:".format(way))
+        print(' '.join(ways[way]))
         print('\n\n')
 
-
+@save_in_file
 def write_in_files(ways):
     """ Write ways in files"""
-    for way in ways:
-        with open(os.path.join(os.path.abspath(os.curdir), 'Flights', '{}.txt'.format(way['departure'])), 'w') as flights_file:
-            for destination in way['destinations']:
-                flights_file.write(destination + '\n')
+    for way in ways.keys():
+        with open(os.path.join(os.path.abspath(os.curdir), 'Flights', '{}.txt'.format(way)), 'a') as flights_file:
+            flights_file.writelines('\n'.join(ways[way]))
 
-
+@save_in_file
 def refresh():
     """ Refresh info """
     flights = AllFlights()
-    flights.search_for_all_ways()
+    flights.get_airports()
     write_in_files(flights.all_ways)
     output(flights.all_ways)
 
-
+@save_in_file
 def parse_args():
     """ Parse args """
     parser = argparse.ArgumentParser()
@@ -98,7 +100,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
+@save_in_file
 def main():
     """ Main function """
     if parse_args().refresh:
