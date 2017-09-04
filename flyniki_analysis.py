@@ -25,21 +25,14 @@ class Parser(object):
         self.output = []
         self.flights_combinations = []
         self.init_variables()
-        self.index = -1
+        self.index = 0
         self.length = self.__get_length()
 
     def __iter__(self):
         """ Iteration """
-        return self
-
-    def next(self):
-        """ Next element """
+        yield self.output[self.index]
         self.index += 1
-        while self.index < self.length:
-            try:
-                yield self.output[self.index]
-            except StopIteration:
-                break
+
 
     def output_flights(self):
         self.preparation_to_output()
@@ -284,12 +277,11 @@ def main():
             if check_args(info):
                 break
     all_flights = fef.AllFlights()
-    # if all_flights.check_way(info):
-    flight = Parser(info)
-    flight.output_flights()
-
-    # else:
-        # print("This way doesnt exist")
+    if all_flights.check_way(info):
+        flight = Parser(info)
+        flight.output_flights()
+    else:
+        print("This way doesnt exist")
 
 if __name__ == "__main__":
     main()
