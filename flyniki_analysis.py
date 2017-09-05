@@ -138,7 +138,7 @@ class Parser(object):
 
     def clean_line_from_combinations(self):
         """ Delete all prices from combinations """
-        self.flights_combinations = list(map(lambda x: x[0].set_way_back(x[1]), self.flights_combinations))
+        self.flights_combinations = [x[0].set_way_back(x[1]) for x in self.flights_combinations]
 
     def get_currency(self):
         """ Get currency from HTML """
