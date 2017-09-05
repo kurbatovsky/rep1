@@ -29,15 +29,15 @@ class Parser(object):
 
     def __iter__(self):
         """ Iteration """
-        for x in self.output:
-            yield x
+        for out in self.output:
+            yield out
 
     def output_flights(self):
         """ Print flights """
         self.preparation_to_output()
         try:
-            for x in self.output:
-                print(x)
+            for out in self.output:
+                print out
         except StopIteration:
             pass
 
@@ -50,7 +50,7 @@ class Parser(object):
         try:
             self.get_html()
         except KeyError:
-            print("Flights not found")
+            print "Flights not found"
             exit(0)
         self.get_line()
         if self.args.return_date:
@@ -93,15 +93,17 @@ class Parser(object):
     def get_line(self, way="outbound"):
         """ Get line from HTML """
         xpath = '//div[@class="{0} block"]//tr[@role="group"]'
-        for tr in self.tree.xpath(xpath.format(way)):
-            self.lines[way].extend([self.str_to_flight(re.sub(r',\d', '.0', re.sub(r'\.', '', x))) for x in tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title')])
+        for branch in self.tree.xpath(xpath.format(way)):
+            path = 'td[@role="radio"]//label/div[@class="lowest"]/span/@title'
+            self.lines[way].extend([self.str_to_flight(x) for x in branch.xpath(path)])
         if not self.lines[way]:
-            print('No flights found')
+            print 'No flights found'
             exit(0)
 
     @staticmethod
     def str_to_flight(flight_str):
         """ Transform string to Flight """
+        flight_str = re.sub(r',\d', '.0', re.sub(r'\.', '', flight_str))
         return Flight(*flight_str.split(','))
 
     @staticmethod
@@ -128,13 +130,17 @@ class Parser(object):
 
     def set_total_cost(self):
         """ Set total cost in combinations list """
-        self.flights_combinations = [x + (self.calculate_total_cost(x), ) for x in self.flights_combinations]
+        self.flights_combinations = [self.form_flight(x) for x in self.flights_combinations]
+
+    def form_flight(self, line):
+        """ Form tuple flight """
+        return line + (self.calculate_total_cost(line), )
 
     @staticmethod
     def clean_line(line):
         """ Delete price from line """
-        x = re.sub(r': \d+,\d+', '', line)
-        return x
+        line = re.sub(r': \d+,\d+', '', line)
+        return line
 
     def clean_line_from_combinations(self):
         """ Delete all prices from combinations """
@@ -172,7 +178,10 @@ class Flight:
     def __str__(self):
         """ Output function """
         if not self.price_back:
-            return '{0}, {1}, {2}, {3}'.format(self.way, self.time, self.duration[:-1], self.total_price)
+            return '{0}, {1}, {2}, {3}'.format(self.way,
+                                               self.time,
+                                               self.duration[:-1],
+                                               self.total_price)
         else:
             return '{0}, {1}, {2}, {3} — {4}, {5}, {6}, {7} {8}'.format(self.way,
                                                                         self.time,
@@ -213,20 +222,20 @@ def check_args(args):
     """ Check args """
     try:
         if re.match(r'^[A-Z]{3}$', args.outbound_airport).group() != args.outbound_airport:
-            print("IATA must be in AAA format")
+            print "IATA must be in AAA format"
             return False
         elif re.match(r'^[A-Z]{3}$', args.return_airport).group() != args.return_airport:
-            print("IATA must be in AAA format")
+            print "IATA must be in AAA format"
             return False
     except AttributeError:
-        print("IATA must be in AAA format")
+        print "IATA must be in AAA format"
         return False
     if not is_correct_date(args.outbound_date):
-        print("Date must be in YYYY-MM-DD format")
+        print "Date must be in YYYY-MM-DD format"
         return False
     if args.return_date != '':
         if not is_correct_date(args.return_date):
-            print("Date must be in YYYY-MM-DD format")
+            print "Date must be in YYYY-MM-DD format"
             return False
     return True
 
@@ -253,34 +262,34 @@ def parse_args():
 
 def main():
     """ Main function """
-    Flight_info = collections.namedtuple('Flight_info',
-                                         ['outbound_airport',
-                                          'return_airport',
-                                          'outbound_date',
-                                          'return_date'])
+    Flight_information = collections.namedtuple('Flight_info',
+                                                ['outbound_airport',
+                                                 'return_airport',
+                                                 'outbound_date',
+                                                 'return_date'])
     args = parse_args()
-    info = Flight_info(outbound_airport=args.outbound_airport,
-                       return_airport=args.return_airport,
-                       outbound_date=args.departure_date,
-                       return_date=args.return_date)
+    info = Flight_information(outbound_airport=args.outbound_airport,
+                              return_airport=args.return_airport,
+                              outbound_date=args.departure_date,
+                              return_date=args.return_date)
 
     if not check_args(info):
         while True:
-            print("String must be in AAA ZZZ YYYY-MM-DD [YYYY-MM-DD] format, try again")
+            print "String must be in AAA ZZZ YYYY-MM-DD [YYYY-MM-DD] format, try again"
             args = raw_input().split(' ')
             if len(args) == 3:
                 args.append('')
-            info = Flight_info(*args)
+            info = Flight_information(*args)
             if check_args(info):
                 break
     all_flights = fef.AllFlights()
     if all_flights.check_way(info):
         flight = Parser(info)
         flight.preparation_to_output()
-        for x in flight:
-            print(x)
+        for way in flight:
+            print way
     else:
-        print("This way doesnt exist")
+        print "This way doesnt exist"
 
 if __name__ == "__main__":
     main()

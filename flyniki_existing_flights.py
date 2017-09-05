@@ -7,17 +7,24 @@ import argparse
 import requests
 
 
-def save(type="print", file_name=''):
+def save(save_in="print", file_name=''):
+    """ Save decorator """
     def my_decorator(a_function_to_decorate):
+        """ Save decorator """
+        name = '{}.txt'.format(a_function_to_decorate.__name__ if not file_name else file_name)
+        path = os.path.join(os.path.abspath(os.curdir),
+                            'Functions',
+                            name)
+
         def wrapper(*args):
+            """ Wrapper """
             result = a_function_to_decorate(*args)
-            if type == "file":
-                with open(os.path.join(os.path.abspath(os.curdir), 'Functions', '{}.txt'.format(
-                        a_function_to_decorate.__name__ if not file_name else file_name)), 'a') as function_file:
+            if save_in == "file":
+                with open(path, 'a') as function_file:
                     function_file.write(str(result))
                     function_file.write('\n')
-            elif type == "print":
-                print(result)
+            elif save_in == "print":
+                print result
             else:
                 raise AttributeError
 
@@ -69,28 +76,31 @@ class AllFlights(object):
                 'routesource[1]': 'partner'}
 
     def check_way(self, info):
+        """ Check way exist """
         self.get_airports()
         return info.return_airport in self.all_ways[info.outbound_airport]
 
 
-@save(type="file", file_name="Lolkek")
+@save(save_in="file", file_name="Lolkek")
 def output(ways):
     """ Output function """
     for way in ways.keys():
-        print("From {} to:".format(way))
-        print(' '.join(ways[way]))
-        print('\n\n')
+        print "From {} to:".format(way)
+        print ' '.join(ways[way])
+        print '\n\n'
     return "output"
 
 
 def write_in_files(ways):
     """ Write ways in files"""
     for way in ways.keys():
-        with open(os.path.join(os.path.abspath(os.curdir), 'Flights', '{}.txt'.format(way)), 'a') as flights_file:
+        file_name = '{}.txt'.format(way)
+        path = os.path.join(os.path.abspath(os.curdir), 'Flights', file_name)
+        with open(path, 'a') as flights_file:
             flights_file.writelines('\n'.join(ways[way]))
 
 
-@save(type="file", file_name="Lolkek")
+@save(save_in="file", file_name="Lolkek")
 def refresh():
     """ Refresh info """
     flights = AllFlights()
