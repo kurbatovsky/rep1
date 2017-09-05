@@ -182,16 +182,15 @@ class Flight(object):
                                                self.time,
                                                self.duration[:-1],
                                                self.total_price)
-        else:
-            return '{0}, {1}, {2}, {3} — {4}, {5}, {6}, {7} {8}'.format(self.way,
-                                                                        self.time,
-                                                                        self.duration[:-1],
-                                                                        self.str_price_to_class(self.price),
-                                                                        self.way_back,
-                                                                        self.time_back,
-                                                                        self.duration_back[:-1],
-                                                                        self.str_price_to_class(self.price_back),
-                                                                        self.total_price)
+        return '{0}, {1}, {2}, {3} — {4}, {5}, {6}, {7} {8}'.format(self.way,
+                                                                    self.time,
+                                                                    self.duration[:-1],
+                                                                    self.str_price_to_class(self.price),
+                                                                    self.way_back,
+                                                                    self.time_back,
+                                                                    self.duration_back[:-1],
+                                                                    self.str_price_to_class(self.price_back),
+                                                                    self.total_price)
 
     def set_way_back(self, flight):
         """ Set way back"""
