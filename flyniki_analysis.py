@@ -94,8 +94,7 @@ class Parser(object):
         """ Get line from HTML """
         xpath = '//div[@class="{0} block"]//tr[@role="group"]'
         for tr in self.tree.xpath(xpath.format(way)):
-            self.lines[way].extend(map(lambda x: self.str_to_flight(re.sub(r',\d', '.0', re.sub(r'\.', '', x))),
-                                       tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title')))
+            self.lines[way].extend([self.str_to_flight(re.sub(r',\d', '.0', re.sub(r'\.', '', x))) for x in tr.xpath('td[@role="radio"]//label/div[@class="lowest"]/span/@title')])
         if not self.lines[way]:
             print('No flights found')
             exit(0)
@@ -279,9 +278,9 @@ def main():
         flight = Parser(info)
         flight.preparation_to_output()
         for x in flight:
-            print x
+            print(x)
     else:
-       print("This way doesnt exist")
+        print("This way doesnt exist")
 
 if __name__ == "__main__":
     main()
