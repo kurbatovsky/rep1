@@ -160,7 +160,7 @@ class Parser(object):
         self.length = self.__get_length()
 
 
-class Flight:
+class Flight(object):
     """ Flight class """
 
     def __init__(self, way, time, duration, price):
